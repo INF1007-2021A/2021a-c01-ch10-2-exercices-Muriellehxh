@@ -14,46 +14,56 @@ from sklearn.datasets import make_regression
 from sklearn.linear_model import LinearRegression
 
 
-
 # TODO: Définissez vos fonctions ici
 
 
-
-def separer_ensemble_xy():
-
-    access = 'data/winequality-white.csv'
+def separer_ensemble_xy(access):
     df_tot = pd.read_csv(access, delimiter=';')  # careful !! the ; dummy
-
     y = df_tot['quality']
-    print(y)
-
-    x = df_tot.drop(columns=["quality"])
+    x = df_tot.drop(columns=["quality"])  # on prend tout sauf le y, pcq ils sont séparés
     # NOT x = df_tot.index !!
-    print(list(x))
-    x_train, x_test, y_train, y_test = train_test_split(x, y)
-    print(x_train)
+    return x, y
 
+
+def train_split(x, y):
+    x_train, x_test, y_train, y_test = train_test_split(x.to_numpy(), y.to_numpy())  # ALWAYS check for the type of ur arguments
+    # (in article it says the type has to be numpy, NOT pd.DATAFRAME)
+    return x_train, x_test, y_train, y_test
+
+
+def AI(x_train, x_test, y_train, y_test):
     regr_forest = RandomForestRegressor()
     regr_forest.fit(x_train, y_train)
-    reg = LinearRegression().fit(x_train, y_train)
+    reg_lr = LinearRegression().fit(x_train, y_train)
+    return x_test, y_test, regr_forest, reg_lr
 
+
+def predictions(x_test, y_test, regr_forest, reg_lr):
     pred_forest = regr_forest.predict(x_test)
-    print(pred_forest)
-    pred_linreg = reg.predict(x_test)
-    print(pred_linreg)
+    pred_linreg = reg_lr.predict(x_test)
 
-    df_y_test = pd.DataFrame(y_test)
-    df_y_linreg_pred = pd.DataFrame(pred_linreg)
-    df_y_forest_pred = pd.DataFrame(pred_forest)
-    # same number
+    return x_test, pred_forest, pred_linreg, y_test
 
 
-    plt.plot(np.arange(len(y_test)), y_test, label="Real values")
-    plt.plot(np.arange(len(y_test)), df_y_forest_pred, label="Forest predicted value")
+def diagrams(x_test, pred_forest, pred_linreg, y_test):
+    fig = plt.figure()
+    plt.plot(x_test, y_test, label="Real values")
+    plt.plot(x_test, pred_linreg, label="Forest predicted value")
+    fig.savefig(f"./{'Forest'}.png")
     plt.show()
-
 
 
 if __name__ == '__main__':
     # TODO: Appelez vos fonctions ici
-    separer_ensemble_xy()
+    x, y = (separer_ensemble_xy('./data/winequality-white.csv'))
+    print(x,y)
+
+    x_train, x_test, y_train, y_test = (train_split(x, y))
+
+    x_test, y_test, regr_forest, reg_lr = AI(x_train, x_test, y_train, y_test)
+
+    x_test, pred_forest, pred_linreg, y_test = predictions(x_test, y_test, regr_forest, reg_lr)
+    print(pred_forest, pred_linreg, y_test)
+
+    graph = diagrams(x_test, pred_forest, pred_linreg, y_test)
+    print(graph)
